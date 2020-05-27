@@ -1,0 +1,64 @@
+#!/bin/bash
+​
+# Directory structure for /scratch/csng/CSNG/data:
+#   raw -> sub-xx
+#   nifti -> sub-xx
+#   output -> fmriprep -> sub-xx
+#          -> freesurfer -> sub-xx
+​
+# All scripts should be located in /home/jthompsz/analysis/csng, while data should be located in /scratch/csng/CSNG during processing them moved to MEMORI drive (CSNG) - data gets removed from $SCRATCH every 100 days or so.
+​
+# 1. Make directories as needed...first, check what is there using ls 
+ls -la /scratch/csng/CSNG
+​
+mkdir /scratch/csng/CSNG/
+mkdir /scratch/csng/CSNG/raw
+mkdir /scratch/csng/CSNG/raw/sub-xx
+​
+mkdir /scratch/csng/CSNG/nifti
+mkdir /scratch/csng/CSNG/output
+mkdir /scratch/csng/CSNG/work
+​
+# 2. Pull data from /groups/MRICORE/PI-NAME to /scratch/csng/CSNG/raw
+cp -r /groups/MRICORE/Thompson/THOMPSON_SOC_REW*_002_* /scratch/csng/CSNG/raw/sub-02
+​
+# 3. Run raw_2_bids-fMRIPREP for your study. First, edit in emacs to run with participants you've just pulled - you are just changing the number of jobs that will run.
+​
+emacs /home/jthompsz/analysis/csng/raw_2_bids-fMRIPREP-parallel.sh
+​
+# 4. Edit participants.tsv to include participants you wish to preprocess
+​
+emacs participants.tsv
+​
+# 5. then run the .slurm script
+​
+sbatch /home/jthompsz/analysis/csng/raw_2_bids-fMRIPREP-parallel.slurm
+​
+# Note the Batch JobID you are assigned. Check progress using sacct - it will say RUNNING if running, COMPLETED if completed, FAILED if failed, and PENDING if pending
+​
+sacct -X
+​
+# if it fails (or completes and something seems wring (ie w data in nifti folder), check the .err file that was generated. It is located in $SCRATCH and should be called
+# raw_2_bids-fMRIPREP-NODExx-JobID.err (where NODExx and JobID were assigned when it ran.
+​
+ls -la /scratch/csng/CSNG/raw_2_bids
+cat /scratch/csng/CSNG/raw_2_bids-NODE{edit this}-{edit this}
+​
+# errors are usually around file naming.
+​
+​
+​
+# 6. Edit the fmriprep slurm script to reflect the number of jobs (participants) you will run in parallel. You can run lots, so 10-20 at once should be OK
+​
+emacs *-fMRIPREP-parallel-2.slurm
+​
+# edit the line that says #SBATCH --array=1-3 to make it 1-HowEverManyYouWillRun
+​
+# 6. Then run the .slurm script
+​
+sbatch ~/*-fMRIPREP-parallel-2.slurm
+​
+# and check as above. If you are impatient like me you can also check your spot in the queue using sprio. If you need to kill a job use scancel JobID
+​
+# once it is completed (about 15-18 hours) check the .err and .out files in $SCRATCH. Note these are too big to read using cat or emacs - you probably need to download them locally.
+# You can sftp directly into argo or use Filezilla (if you have Filezilla on your local machine - I recommend this tbh)
